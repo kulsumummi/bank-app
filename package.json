@@ -1,0 +1,23 @@
+{
+  "name": "bankus-root",
+  "version": "1.0.0",
+  "description": "BankUs Digital Banking Application",
+  "main": "index.js",
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.24",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.0"
+  },
+  "dependencies": {
+    "axios": "^1.13.5",
+    "lucide-react": "^0.575.0",
+    "react-router-dom": "^7.13.0"
+  }
+}
