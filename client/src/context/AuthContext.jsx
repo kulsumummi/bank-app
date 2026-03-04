@@ -18,7 +18,8 @@ export const AuthProvider = ({ children }) => {
 
     // Initialize socket connection
     useEffect(() => {
-        const newSocket = io('http://localhost:5000', {
+        const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
+        const newSocket = io(socketUrl, {
             withCredentials: true,
             autoConnect: false
         });

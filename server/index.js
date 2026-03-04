@@ -102,13 +102,17 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     try {
         await connectDB();
-        server.listen(PORT, () => {
-            console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-            console.log(`👉 Access the app at: http://localhost:5173`);
-        });
+        if (process.env.NODE_ENV !== 'production') {
+            server.listen(PORT, () => {
+                console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+                console.log(`👉 Access the app at: http://localhost:5173`);
+            });
+        }
     } catch (error) {
         console.error('❌ Failed to start server:', error.message);
     }
 };
 
 startServer();
+
+module.exports = app;
