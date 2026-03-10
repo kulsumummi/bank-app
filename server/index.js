@@ -14,9 +14,18 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Handle CORS origins dynamically
+const allowedOrigins = [
+    'http://localhost:5173',
+    process.env.FRONTEND_URL,
+    // Add Vercel system environment variables as fallback
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+].filter(Boolean);
+
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
         credentials: true
     }
 });
@@ -42,21 +51,33 @@ app.use(cookieParser());
 
 // Enable CORS
 app.use(cors({
-    origin: 'http://localhost:5173', // Vite default port
+    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
     credentials: true
 }));
 
 // Connect to Database
 const connectDB = async () => {
+    if (!process.env.MONGODB_URI) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('❌ MONGODB_URI is missing in production environment!');
+            return; // Don't crash, but log error
+        }
+        console.log('⚠️  MONGODB_URI missing, attempting Demo Mode fallback...');
+    }
+
     try {
         console.log('🔍 Connecting to MongoDB...');
         // Set short timeout for local connection discovery
-        await mongoose.connect(process.env.MONGODB_URI, {
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bankus', {
             serverSelectionTimeoutMS: 5000
         });
         console.log('✅ MongoDB Connected Successfully');
     } catch (err) {
-        console.error('❌ Primary MongoDB Connection Failed:', err.message);
+        if (process.env.NODE_ENV === 'production') {
+            console.error('❌ Primary MongoDB Connection Failed:', err.message);
+            return;
+        }
+
         console.log('🚀 Attempting to start in Demo Mode (In-Memory Database)...');
 
         try {
@@ -66,10 +87,8 @@ const connectDB = async () => {
 
             await mongoose.connect(mongoUri);
             console.log('✨ BankUs is now running in DEMO MODE (In-Memory)');
-            console.log('⚠️  Note: Transactions and users will NOT be saved after the server restarts.');
         } catch (memErr) {
             console.error('❌ Failed to start Demo Mode:', memErr.message);
-            console.log('💡 TIP: Please ensure you have a working MongoDB connection string in server/.env');
             process.exit(1);
         }
     }

@@ -18,10 +18,13 @@ export const AuthProvider = ({ children }) => {
 
     // Initialize socket connection
     useEffect(() => {
-        const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
+        // In production on Vercel, we use the same origin. 
+        // Socket.io will be proxied via vercel.json rewrites.
+        const socketUrl = window.location.origin;
         const newSocket = io(socketUrl, {
             withCredentials: true,
-            autoConnect: false
+            autoConnect: false,
+            path: '/socket.io/' // Explicitly set path for proxying
         });
         setSocket(newSocket);
 
