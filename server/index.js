@@ -52,9 +52,20 @@ app.use(cookieParser());
 // Database connection check middleware
 app.use((req, res, next) => {
     if (mongoose.connection.readyState !== 1 && req.path.startsWith('/api')) {
+        let errorMsg = 'Checking database connection...';
+        
+        if (!process.env.MONGODB_URI) {
+            errorMsg = 'MONGODB_URI is missing in Vercel Environment Variables.';
+        } else if (mongoose.connection.readyState === 0) {
+            errorMsg = 'Database connection failed. Please check your MongoDB Atlas IP Whitelist (ensure 0.0.0.0/0 is added).';
+        } else if (mongoose.connection.readyState === 2) {
+            errorMsg = 'Database is currently connecting. Please refresh in a moment.';
+        }
+
         return res.status(503).json({
             success: false,
-            error: 'Database not connected. Please check your MONGODB_URI and IP whitelist.'
+            error: errorMsg,
+            readyState: mongoose.connection.readyState
         });
     }
     next();
@@ -149,7 +160,8 @@ startServer();
 
 // Ensure the first request waits for connection if needed
 app.use(async (req, res, next) => {
-    if (mongoose.connection.readyState === 0) {
+    if (mongoose.connection.readyState === 0 && process.env.MONGODB_URI) {
+        console.log('🔄 Reactive connection attempt...');
         await connectDB();
     }
     next();
