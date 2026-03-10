@@ -49,6 +49,17 @@ io.on('connection', (socket) => {
 app.use(express.json());
 app.use(cookieParser());
 
+// Database connection check middleware
+app.use((req, res, next) => {
+    if (mongoose.connection.readyState !== 1 && req.path.startsWith('/api')) {
+        return res.status(503).json({
+            success: false,
+            error: 'Database not connected. Please check your MONGODB_URI and IP whitelist.'
+        });
+    }
+    next();
+});
+
 // Enable CORS
 app.use(cors({
     origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
@@ -132,6 +143,16 @@ const startServer = async () => {
     }
 };
 
+// Start the connection process
+// For Vercel, this will run on every cold start
 startServer();
+
+// Ensure the first request waits for connection if needed
+app.use(async (req, res, next) => {
+    if (mongoose.connection.readyState === 0) {
+        await connectDB();
+    }
+    next();
+});
 
 module.exports = app;
